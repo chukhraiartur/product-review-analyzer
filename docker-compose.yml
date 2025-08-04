@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: review_analyzer_db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-review_analyzer}
+      POSTGRES_USER: ${DB_USER:-review_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-review_password}
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U review_user -d review_analyzer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - review_analyzer_network
+
+  # Main Application
+  app:
+    build: .
+    container_name: review_analyzer_app
+    ports:
+      - "${API_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-review_user}
+      - DB_PASSWORD=${DB_PASSWORD:-review_password}
+      - DB_NAME=${DB_NAME:-review_analyzer}
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    volumes:
+      - ./data:/app/data
+      - ./credentials:/app/credentials:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - review_analyzer_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  review_analyzer_network:
+    driver: bridge 
