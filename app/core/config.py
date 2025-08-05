@@ -14,6 +14,7 @@ class Settings(BaseSettings):
         default="Product Review Analyzer", description="Application name"
     )
     debug: bool = Field(default=False, description="Debug mode")
+    testing: bool = Field(default=False, description="Testing mode")
 
     # Database settings - PostgreSQL (all required)
     db_host: str = Field(default="localhost", description="Database host")
@@ -82,5 +83,10 @@ class Settings(BaseSettings):
     }
 
 
-# Global settings instance
-settings = Settings()
+def get_settings() -> Settings:
+    """Get application settings instance."""
+    return Settings()
+
+
+# Backward compatibility - global settings instance
+settings = get_settings()
