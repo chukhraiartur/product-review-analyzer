@@ -278,7 +278,6 @@ class GCSService:
             Number of deleted files
         """
         try:
-
             cutoff_date = datetime.now(UTC).replace(
                 hour=0, minute=0, second=0, microsecond=0
             )

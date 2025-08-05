@@ -1,9 +1,10 @@
 """Unit tests for Pydantic schemas."""
 
+
 import pytest
-from datetime import datetime
-from app.schemas.vistaprint import VistaPrintProduct, VistaPrintReview
+
 from app.schemas.api import ProductResponse, ReviewResponse, SearchRequest
+from app.schemas.vistaprint import VistaPrintProduct, VistaPrintReview
 
 
 @pytest.mark.unit
@@ -16,11 +17,11 @@ class TestVistaPrintSchemas:
             "product_slug": "test-product",
             "name": "Test Product",
             "url": "https://www.vistaprint.com/test-product",
-            "reviews": []
+            "reviews": [],
         }
-        
+
         product = VistaPrintProduct(**data)
-        
+
         assert product.product_slug == "test-product"
         assert product.name == "Test Product"
         assert product.url == "https://www.vistaprint.com/test-product"
@@ -37,11 +38,11 @@ class TestVistaPrintSchemas:
             "score": 5,
             "description": "This is a great product!",
             "is_verified_purchase": True,
-            "images": []
+            "images": [],
         }
-        
+
         review = VistaPrintReview(**data)
-        
+
         assert review.position == 1
         assert review.external_id == "123456"
         assert review.title == "Great Product"
@@ -59,7 +60,7 @@ class TestAPISchemas:
     def test_product_response_valid(self):
         """Test valid product response."""
         from datetime import datetime
-        
+
         data = {
             "id": 1,
             "title": "Test Product",
@@ -68,11 +69,11 @@ class TestAPISchemas:
             "reviews": [],
             "total_reviews": 0,
             "created_at": datetime.now(),
-            "updated_at": datetime.now()
+            "updated_at": datetime.now(),
         }
-        
+
         response = ProductResponse(**data)
-        
+
         assert response.id == 1
         assert response.title == "Test Product"
         assert response.url == "https://example.com/product"
@@ -81,7 +82,7 @@ class TestAPISchemas:
     def test_review_response_valid(self):
         """Test valid review response."""
         from datetime import datetime
-        
+
         data = {
             "id": 1,
             "product_id": 1,
@@ -95,11 +96,11 @@ class TestAPISchemas:
             "sentiment_score": 0.85,
             "image_urls": [],
             "created_at": datetime.now(),
-            "updated_at": datetime.now()
+            "updated_at": datetime.now(),
         }
-        
+
         response = ReviewResponse(**data)
-        
+
         assert response.id == 1
         assert response.product_id == 1
         assert response.title == "Great Product"
@@ -110,23 +111,18 @@ class TestAPISchemas:
 
     def test_search_request_valid(self):
         """Test valid search request."""
-        data = {
-            "query": "great quality",
-            "limit": 10
-        }
-        
+        data = {"query": "great quality", "limit": 10}
+
         request = SearchRequest(**data)
-        
+
         assert request.query == "great quality"
         assert request.limit == 10
 
     def test_search_request_default_limit(self):
         """Test search request with default limit value."""
-        data = {
-            "query": "great quality"
-        }
-        
+        data = {"query": "great quality"}
+
         request = SearchRequest(**data)
-        
+
         assert request.query == "great quality"
-        assert request.limit == 10  # Default value 
+        assert request.limit == 10  # Default value

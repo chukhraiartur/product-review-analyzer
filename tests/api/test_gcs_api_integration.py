@@ -82,8 +82,19 @@ class TestGCSAPIIntegration:
         mock_gcs_service.save_html.assert_called()
 
     @pytest.mark.api
-    def test_scraping_with_force_refresh_false(self, client, mock_gcs_service):
+    @patch("app.services.vistaprint_scraper.requests.get")
+    def test_scraping_with_force_refresh_false(self, mock_get, client, mock_gcs_service):
         """Test scraping API with force_refresh=False (default)."""
+        # Mock HTTP requests
+        def mock_get_side_effect(url, **kwargs):
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.text = "<html><body>Test Product Page</body></html>"
+            mock_response.raise_for_status.return_value = None
+            return mock_response
+        
+        mock_get.side_effect = mock_get_side_effect
+
         # Mock GCS service methods
         mock_gcs_service.save_html.return_value = (
             "https://storage.googleapis.com/test-bucket/html/test.html"
