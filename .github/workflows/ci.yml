@@ -99,11 +99,11 @@ jobs:
         DB_USER=review_user
         DB_PASSWORD=review_password
         DB_NAME=review_analyzer_test
-        OPENAI_API_KEY=test_key
-        OPENAI_MODEL=gpt-4
+        OPENAI_API_KEY=sk-test-key-for-ci-only
+        OPENAI_MODEL=gpt-3.5-turbo
         GCP_PROJECT_ID=test-project
         GCP_BUCKET_NAME=test-bucket
-        GCP_CREDENTIALS_PATH=./test-credentials.json
+        GCP_CREDENTIALS_PATH=./credentials/gcp-credentials.json
         FAISS_INDEX_PATH=./test_data/faiss_index
         REQUEST_TIMEOUT=30
         MAX_RETRIES=3
@@ -114,12 +114,17 @@ jobs:
     - name: Create test credentials file
       run: |
         mkdir -p credentials
-        echo '{"type": "service_account", "project_id": "test"}' > credentials/gcp-credentials.json
+        echo '{"type": "service_account", "project_id": "test", "private_key_id": "test", "private_key": "test", "client_email": "test@test.com", "client_id": "test", "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://oauth2.googleapis.com/token", "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/test%40test.com"}' > credentials/gcp-credentials.json
         
     - name: Run unit tests only
       env:
         ENV_FILE: .env.test
-      run: poetry run pytest tests/unit/ --cov=app --cov-report=xml --cov-report=term-missing
+        TESTING: true
+        OPENAI_API_KEY: sk-test-key-for-ci-only
+        GCP_PROJECT_ID: test-project
+        GCP_BUCKET_NAME: test-bucket
+        GCP_CREDENTIALS_PATH: ./credentials/gcp-credentials.json
+      run: poetry run pytest tests/unit/ -m "unit" --cov=app --cov-report=xml --cov-report=term-missing
       
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -187,11 +192,11 @@ jobs:
         DB_USER=review_user
         DB_PASSWORD=review_password
         DB_NAME=review_analyzer_test
-        OPENAI_API_KEY=test_key
-        OPENAI_MODEL=gpt-4
+        OPENAI_API_KEY=sk-test-key-for-ci-only
+        OPENAI_MODEL=gpt-3.5-turbo
         GCP_PROJECT_ID=test-project
         GCP_BUCKET_NAME=test-bucket
-        GCP_CREDENTIALS_PATH=./test-credentials.json
+        GCP_CREDENTIALS_PATH=./credentials/gcp-credentials.json
         FAISS_INDEX_PATH=./test_data/faiss_index
         REQUEST_TIMEOUT=30
         MAX_RETRIES=3
@@ -202,12 +207,17 @@ jobs:
     - name: Create test credentials file
       run: |
         mkdir -p credentials
-        echo '{"type": "service_account", "project_id": "test"}' > credentials/gcp-credentials.json
+        echo '{"type": "service_account", "project_id": "test", "private_key_id": "test", "private_key": "test", "client_email": "test@test.com", "client_id": "test", "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://oauth2.googleapis.com/token", "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/test%40test.com"}' > credentials/gcp-credentials.json
         
     - name: Run mock tests (API tests with mocked services)
       env:
         ENV_FILE: .env.test
-      run: poetry run pytest tests/api/ --cov=app --cov-report=xml --cov-report=term-missing
+        TESTING: true
+        OPENAI_API_KEY: sk-test-key-for-ci-only
+        GCP_PROJECT_ID: test-project
+        GCP_BUCKET_NAME: test-bucket
+        GCP_CREDENTIALS_PATH: ./credentials/gcp-credentials.json
+      run: poetry run pytest tests/api/ -m "unit or mock" --cov=app --cov-report=xml --cov-report=term-missing
       
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3

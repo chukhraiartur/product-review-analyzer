@@ -174,11 +174,11 @@ def setup_test_env():
     # Set test environment
     os.environ["TESTING"] = "true"
     os.environ["DEBUG"] = "true"
-    os.environ["OPENAI_API_KEY"] = "test-key"
+    os.environ["OPENAI_API_KEY"] = "sk-test-key-for-ci-only"
     os.environ["OPENAI_MODEL"] = "gpt-3.5-turbo"
     os.environ["GCP_PROJECT_ID"] = "test-project"
     os.environ["GCP_BUCKET_NAME"] = "test-bucket"
-    os.environ["GCP_CREDENTIALS_PATH"] = "./credentials/test-credentials.json"
+    os.environ["GCP_CREDENTIALS_PATH"] = "./credentials/gcp-credentials.json"
     os.environ["FAISS_INDEX_PATH"] = "./test_data/faiss_index"
     os.environ["REQUEST_TIMEOUT"] = "10"
     os.environ["MAX_RETRIES"] = "1"
