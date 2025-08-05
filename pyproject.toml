@@ -22,7 +22,7 @@ google-cloud-storage = "^2.10.0"
 torch = {version = "^2.1.0", source = "pytorch"}
 torchvision = {version = "^0.16.0", source = "pytorch"}
 sentence-transformers = "^2.2.2"
-numpy = "^2.0.0"
+numpy = ">=1.24.0,<2.0.0"
 python-multipart = "^0.0.6"
 alembic = "^1.12.1"
 python-dotenv = "^1.0.0"
