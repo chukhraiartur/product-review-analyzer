@@ -105,12 +105,19 @@ def mock_settings():
 
 
 @pytest.fixture
-def test_client(mock_gcs_service, mock_llm_service, mock_vector_db_service, test_db_session):
+def test_client(
+    mock_gcs_service, mock_llm_service, mock_vector_db_service, test_db_session
+):
     """Create test client with mocked dependencies."""
     app = create_app()
-    with patch("app.api.dependencies.get_gcs_service", return_value=mock_gcs_service), patch(
+    with patch(
+        "app.api.dependencies.get_gcs_service", return_value=mock_gcs_service
+    ), patch(
         "app.api.dependencies.get_llm_service", return_value=mock_llm_service
-    ), patch("app.api.dependencies.get_vector_db_service", return_value=mock_vector_db_service), patch(
+    ), patch(
+        "app.api.dependencies.get_vector_db_service",
+        return_value=mock_vector_db_service,
+    ), patch(
         "app.api.dependencies.get_db", return_value=test_db_session
     ):
         with TestClient(app) as client:
@@ -177,7 +184,7 @@ def setup_test_env():
     os.environ["MAX_RETRIES"] = "1"
     os.environ["API_HOST"] = "0.0.0.0"
     os.environ["API_PORT"] = "8000"
-    
+
     # Database settings for tests (use SQLite)
     os.environ["DB_HOST"] = "localhost"
     os.environ["DB_PORT"] = "5432"
@@ -189,10 +196,23 @@ def setup_test_env():
 
     # Cleanup
     for key in [
-        "TESTING", "DEBUG", "OPENAI_API_KEY", "OPENAI_MODEL", "GCP_PROJECT_ID",
-        "GCP_BUCKET_NAME", "GCP_CREDENTIALS_PATH", "FAISS_INDEX_PATH",
-        "REQUEST_TIMEOUT", "MAX_RETRIES", "API_HOST", "API_PORT",
-        "DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME"
+        "TESTING",
+        "DEBUG",
+        "OPENAI_API_KEY",
+        "OPENAI_MODEL",
+        "GCP_PROJECT_ID",
+        "GCP_BUCKET_NAME",
+        "GCP_CREDENTIALS_PATH",
+        "FAISS_INDEX_PATH",
+        "REQUEST_TIMEOUT",
+        "MAX_RETRIES",
+        "API_HOST",
+        "API_PORT",
+        "DB_HOST",
+        "DB_PORT",
+        "DB_USER",
+        "DB_PASSWORD",
+        "DB_NAME",
     ]:
         os.environ.pop(key, None)
 
