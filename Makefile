@@ -1,65 +1,83 @@
-.PHONY: help install dev test lint format type-check init-db start clean
+.PHONY: help test test-unit test-mock test-local test-container test-all test-ci lint format type-check clean
 
-help: ## Show this help message
+# Default target
+help:
 	@echo "Available commands:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo "  test-unit     - Run unit tests only (work everywhere)"
+	@echo "  test-mock     - Run unit + mock tests (work everywhere)"
+	@echo "  test-local    - Run tests for local environment"
+	@echo "  test-container- Run tests for container environment"
+	@echo "  test-all      - Run all tests (including integration)"
+	@echo "  test-ci       - Run tests for CI/CD pipeline"
+	@echo "  test          - Run tests based on environment (default)"
+	@echo "  lint          - Run linting (black + ruff)"
+	@echo "  format        - Format code with black"
+	@echo "  type-check    - Run type checking with mypy"
+	@echo "  clean         - Clean up generated files"
 
-install: ## Install dependencies
-	poetry install
+# Test commands
+test:
+	@python scripts/run_tests.py
 
-dev: ## Start development server
-	poetry run dev
+test-unit:
+	@python scripts/run_tests.py unit
 
-start: ## Start production server
-	poetry run start
+test-mock:
+	@python scripts/run_tests.py mock
 
-test: ## Run all tests
-	poetry run pytest tests/ -v
+test-local:
+	@python scripts/run_tests.py local
 
-test-unit: ## Run unit tests only (fast, no external dependencies)
-	poetry run pytest tests/unit/ -v -m "unit"
+test-container:
+	@DOCKER_CONTAINER=1 python scripts/run_tests.py container
 
-test-api: ## Run API tests only (with mocks)
-	poetry run pytest tests/api/ -v -m "api"
+test-all:
+	@python scripts/run_tests.py all
 
-test-integration: ## Run integration tests only (require external services)
-	poetry run pytest tests/integration/ -v -m "integration"
+test-ci:
+	@CI=1 python scripts/run_tests.py ci
 
-test-gcs: ## Run GCS tests only
-	poetry run pytest tests/ -v -m "gcs"
+# Code quality commands
+lint:
+	@echo "Running Black..."
+	@poetry run black --check .
+	@echo "Running Ruff..."
+	@poetry run ruff check .
 
-test-mock: ## Run tests with mocks only
-	poetry run pytest tests/ -v -m "mock"
+format:
+	@echo "Formatting code with Black..."
+	@poetry run black .
+	@echo "Running Ruff auto-fix..."
+	@poetry run ruff check . --fix
 
-test-fast: ## Run fast tests (unit + api with mocks)
-	poetry run pytest tests/unit/ tests/api/ -v -m "unit or api"
+type-check:
+	@echo "Running type checking with MyPy..."
+	@poetry run mypy app/
 
-test-cov: ## Run tests with coverage
-	poetry run pytest tests/ -v --cov=app --cov-report=html:htmlcov --cov-report=term-missing
+# Docker commands
+docker-build:
+	@echo "Building Docker image..."
+	@docker-compose build
 
-lint: ## Run linter
-	poetry run lint
+docker-up:
+	@echo "Starting Docker containers..."
+	@docker-compose up -d
 
-format: ## Format code
-	poetry run format
+docker-down:
+	@echo "Stopping Docker containers..."
+	@docker-compose down
 
-type-check: ## Run type checker
-	poetry run type-check
+docker-test:
+	@echo "Running tests in Docker container..."
+	@docker-compose exec app python scripts/run_tests.py container
 
-init-db: ## Initialize database
-	poetry run init-db
-
-migrate: ## Run database migrations
-	poetry run alembic upgrade head
-
-migrate-create: ## Create new migration
-	poetry run alembic revision --autogenerate -m "$(message)"
-
-clean: ## Clean up generated files
-	find . -type f -name "*.pyc" -delete
-	find . -type d -name "__pycache__" -delete
-	find . -type d -name "*.egg-info" -exec rm -rf {} +
-	rm -rf .pytest_cache
-	rm -rf htmlcov
-	rm -rf .coverage
-	rm -rf coverage.xml 
+# Cleanup
+clean:
+	@echo "Cleaning up..."
+	@find . -type f -name "*.pyc" -delete
+	@find . -type d -name "__pycache__" -delete
+	@find . -type d -name "*.egg-info" -exec rm -rf {} +
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	@find . -type d -name "htmlcov" -exec rm -rf {} +
+	@find . -type f -name "coverage.xml" -delete
+	@find . -type f -name ".coverage" -delete 
