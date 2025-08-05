@@ -55,26 +55,11 @@ jobs:
     - name: Check import sorting
       run: poetry run ruff check --select I . || echo "Import sorting issues found - continuing..."
 
-  # Unit Tests
+  # Unit Tests (No external services required)
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
     needs: lint
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: review_password
-          POSTGRES_USER: review_user
-          POSTGRES_DB: review_analyzer_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5433:5432
     
     steps:
     - name: Checkout code
@@ -108,6 +93,7 @@ jobs:
         cat > .env.test << EOF
         APP_NAME=Product Review Analyzer Test
         DEBUG=true
+        TESTING=true
         DB_HOST=localhost
         DB_PORT=5433
         DB_USER=review_user
@@ -130,10 +116,10 @@ jobs:
         mkdir -p credentials
         echo '{"type": "service_account", "project_id": "test"}' > credentials/gcp-credentials.json
         
-    - name: Run unit tests
+    - name: Run unit tests only
       env:
         ENV_FILE: .env.test
-      run: poetry run pytest tests/ -m "unit" --cov=app --cov-report=xml --cov-report=term-missing
+      run: poetry run pytest tests/unit/ --cov=app --cov-report=xml --cov-report=term-missing
       
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -142,9 +128,9 @@ jobs:
         flags: unit
         name: unit-tests
 
-  # Integration Tests
-  integration-tests:
-    name: Integration Tests
+  # Mock Tests (Tests with mocked external services)
+  mock-tests:
+    name: Mock Tests
     runs-on: ubuntu-latest
     needs: lint
     
@@ -195,6 +181,7 @@ jobs:
         cat > .env.test << EOF
         APP_NAME=Product Review Analyzer Test
         DEBUG=true
+        TESTING=true
         DB_HOST=localhost
         DB_PORT=5433
         DB_USER=review_user
@@ -217,153 +204,23 @@ jobs:
         mkdir -p credentials
         echo '{"type": "service_account", "project_id": "test"}' > credentials/gcp-credentials.json
         
-    - name: Run integration tests
+    - name: Run mock tests (API tests with mocked services)
       env:
         ENV_FILE: .env.test
-      run: poetry run pytest tests/ -m "integration" --cov=app --cov-report=xml --cov-report=term-missing
+      run: poetry run pytest tests/api/ --cov=app --cov-report=xml --cov-report=term-missing
       
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
-        flags: integration
-        name: integration-tests
-
-  # API Tests
-  api-tests:
-    name: API Tests
-    runs-on: ubuntu-latest
-    needs: lint
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: review_password
-          POSTGRES_USER: review_user
-          POSTGRES_DB: review_analyzer_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5433:5432
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python ${{ env.PYTHON_VERSION }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: ${{ env.POETRY_VERSION }}
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        
-    - name: Load cached venv
-      id: cached-poetry-dependencies
-      uses: actions/cache@v3
-      with:
-        path: .venv
-        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-        
-    - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --no-root
-      
-    - name: Create test environment file
-      run: |
-        cat > .env.test << EOF
-        APP_NAME=Product Review Analyzer Test
-        DEBUG=true
-        DB_HOST=localhost
-        DB_PORT=5433
-        DB_USER=review_user
-        DB_PASSWORD=review_password
-        DB_NAME=review_analyzer_test
-        OPENAI_API_KEY=test_key
-        OPENAI_MODEL=gpt-4
-        GCP_PROJECT_ID=test-project
-        GCP_BUCKET_NAME=test-bucket
-        GCP_CREDENTIALS_PATH=./test-credentials.json
-        FAISS_INDEX_PATH=./test_data/faiss_index
-        REQUEST_TIMEOUT=30
-        MAX_RETRIES=3
-        API_HOST=0.0.0.0
-        API_PORT=8000
-        EOF
-        
-    - name: Create test credentials file
-      run: |
-        mkdir -p credentials
-        echo '{"type": "service_account", "project_id": "test"}' > credentials/gcp-credentials.json
-        
-    - name: Run API tests
-      env:
-        ENV_FILE: .env.test
-      run: poetry run pytest tests/ -m "api" --cov=app --cov-report=xml --cov-report=term-missing
-      
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: api
-        name: api-tests
-
-  # GCS Tests
-  gcs-tests:
-    name: Google Cloud Storage Tests
-    runs-on: ubuntu-latest
-    needs: lint
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python ${{ env.PYTHON_VERSION }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: ${{ env.POETRY_VERSION }}
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        
-    - name: Load cached venv
-      id: cached-poetry-dependencies
-      uses: actions/cache@v3
-      with:
-        path: .venv
-        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-        
-    - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --no-root
-        
-    - name: Run GCS tests
-      run: poetry run pytest tests/ -m "gcs" --cov=app --cov-report=xml --cov-report=term-missing
-      
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: gcs
-        name: gcs-tests
+        flags: mock
+        name: mock-tests
 
   # Docker Build
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, api-tests, gcs-tests]
+    needs: [unit-tests, mock-tests]
     
     steps:
     - name: Checkout code
@@ -395,7 +252,7 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, api-tests, gcs-tests]
+    needs: [unit-tests, mock-tests]
     
     steps:
     - name: Checkout code
@@ -407,4 +264,100 @@ jobs:
         python-version: ${{ env.PYTHON_VERSION }}
         path: app/
         level: medium
-        confidence: medium 
+        confidence: medium
+
+  # Integration Tests (Requires real services - only on main branch)
+  integration-tests:
+    name: Integration Tests (Real Services)
+    runs-on: ubuntu-latest
+    needs: [unit-tests, mock-tests, docker-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: review_password
+          POSTGRES_USER: review_user
+          POSTGRES_DB: review_analyzer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ env.POETRY_VERSION }}
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+      
+    - name: Create test environment file
+      run: |
+        cat > .env.test << EOF
+        APP_NAME=Product Review Analyzer Test
+        DEBUG=true
+        TESTING=false
+        DB_HOST=localhost
+        DB_PORT=5433
+        DB_USER=review_user
+        DB_PASSWORD=review_password
+        DB_NAME=review_analyzer_test
+        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+        OPENAI_MODEL=gpt-3.5-turbo
+        GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+        GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }}
+        GCP_CREDENTIALS_PATH=./credentials/gcp-credentials.json
+        FAISS_INDEX_PATH=./test_data/faiss_index
+        REQUEST_TIMEOUT=30
+        MAX_RETRIES=3
+        API_HOST=0.0.0.0
+        API_PORT=8000
+        EOF
+        
+    - name: Setup Google Cloud credentials
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+        
+    - name: Create credentials directory
+      run: mkdir -p credentials
+      
+    - name: Create GCP credentials file
+      run: |
+        echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > credentials/gcp-credentials.json
+        
+    - name: Run integration tests with real services
+      env:
+        ENV_FILE: .env.test
+      run: poetry run pytest tests/integration/ --cov=app --cov-report=xml --cov-report=term-missing
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: integration
+        name: integration-tests 

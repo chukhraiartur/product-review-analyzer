@@ -1,0 +1,143 @@
+name: Integration Tests (Real Services)
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 2 * * 0'  # Run weekly on Sundays at 2 AM
+
+env:
+  PYTHON_VERSION: "3.11"
+  POETRY_VERSION: "1.7.1"
+
+jobs:
+  # Integration Tests (Requires real services)
+  integration-tests:
+    name: Integration Tests (Real Services)
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: review_password
+          POSTGRES_USER: review_user
+          POSTGRES_DB: review_analyzer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ env.POETRY_VERSION }}
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+      
+    - name: Create test environment file
+      run: |
+        cat > .env.test << EOF
+        APP_NAME=Product Review Analyzer Test
+        DEBUG=true
+        TESTING=false
+        DB_HOST=localhost
+        DB_PORT=5433
+        DB_USER=review_user
+        DB_PASSWORD=review_password
+        DB_NAME=review_analyzer_test
+        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+        OPENAI_MODEL=gpt-3.5-turbo
+        GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+        GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }}
+        GCP_CREDENTIALS_PATH=./credentials/gcp-credentials.json
+        FAISS_INDEX_PATH=./test_data/faiss_index
+        REQUEST_TIMEOUT=30
+        MAX_RETRIES=3
+        API_HOST=0.0.0.0
+        API_PORT=8000
+        EOF
+        
+    - name: Setup Google Cloud credentials
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+        
+    - name: Create credentials directory
+      run: mkdir -p credentials
+      
+    - name: Create GCP credentials file
+      run: |
+        echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > credentials/gcp-credentials.json
+        
+    - name: Run integration tests with real services
+      env:
+        ENV_FILE: .env.test
+      run: poetry run pytest tests/integration/ --cov=app --cov-report=xml --cov-report=term-missing
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: integration
+        name: integration-tests
+
+  # End-to-End Tests (Full application testing)
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      run: docker build -t product-review-analyzer:latest .
+      
+    - name: Start application with Docker Compose
+      run: |
+        docker-compose up -d
+        sleep 30  # Wait for services to start
+        
+    - name: Run end-to-end tests
+      run: |
+        # Test health endpoint
+        curl -f http://localhost:8000/api/v1/health/ || exit 1
+        
+        # Test API documentation
+        curl -f http://localhost:8000/docs || exit 1
+        
+        # Test search statistics
+        curl -f http://localhost:8000/api/v1/search/stats || exit 1
+        
+        echo "End-to-end tests passed!"
+        
+    - name: Stop application
+      if: always()
+      run: docker-compose down 
