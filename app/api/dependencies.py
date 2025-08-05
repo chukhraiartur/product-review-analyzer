@@ -49,4 +49,10 @@ def get_data_service(
 
 def get_database() -> Session:
     """Get database session."""
-    return next(get_db())
+    db_generator = get_db()
+    if hasattr(db_generator, '__next__'):
+        # It's a generator, get the first value
+        return next(db_generator)
+    else:
+        # It's already a Session object (e.g., in tests)
+        return db_generator
