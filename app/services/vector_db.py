@@ -22,7 +22,9 @@ class VectorDBService:
         """Initialize the vector database service."""
         self.index_path = settings.faiss_index_path
         self.embedding_model = SentenceTransformer("paraphrase-MiniLM-L3-v2")
-        self.dimension = 384  # Dimension of the embedding model (will be updated based on model)
+        self.dimension = (
+            384  # Dimension of the embedding model (will be updated based on model)
+        )
 
         # Initialize FAISS index with dynamic dimension
         self.index = None  # Will be initialized after model loads
@@ -32,7 +34,7 @@ class VectorDBService:
         # Initialize dimension and index after model loads
         self.dimension = self.embedding_model.get_sentence_embedding_dimension()
         self.index = faiss.IndexFlatIP(self.dimension)
-        
+
         # Load existing index if available
         self._load_index()
 
@@ -48,6 +50,9 @@ class VectorDBService:
             if not review_ids or not texts:
                 logger.warning("No reviews to add to vector database")
                 return
+
+            if self.index is None:
+                raise VectorDBException("Vector database index not initialized")
 
             logger.info(f"Adding {len(texts)} reviews to vector database")
 
@@ -93,12 +98,17 @@ class VectorDBService:
             # Generate query embedding
             query_embedding = self.embedding_model.encode([query])
             # Normalize using NumPy instead of FAISS
-            query_embedding = query_embedding / np.linalg.norm(query_embedding, axis=1, keepdims=True)
+            query_embedding = query_embedding / np.linalg.norm(
+                query_embedding, axis=1, keepdims=True
+            )
 
             # Check if we have any reviews in the index
             if len(self.review_ids) == 0:
                 logger.warning("No reviews in vector database")
                 return []
+
+            if self.index is None:
+                raise VectorDBException("Vector database index not initialized")
 
             # Search in FAISS index
             scores, indices = self.index.search(
@@ -106,14 +116,12 @@ class VectorDBService:
             )
 
             results = []
-            for i, score in zip(indices[0], scores[0]):
+            for i, score in zip(indices[0], scores[0], strict=False):
                 if i < 0:  # FAISS returns -1 for invalid indices
                     continue
                 if filter_ids and self.review_ids[i] not in filter_ids:
                     continue
-                results.append(
-                    (self.review_ids[i], float(score), self.review_texts[i])
-                )
+                results.append((self.review_ids[i], float(score), self.review_texts[i]))
                 if len(results) >= k:
                     break
 
@@ -201,7 +209,7 @@ class VectorDBService:
         """
         try:
             total_reviews = len([rid for rid in self.review_ids if rid != -1])
-            total_vectors = self.index.ntotal
+            total_vectors = self.index.ntotal if self.index is not None else 0
 
             return {
                 "total_reviews": total_reviews,
@@ -239,19 +247,21 @@ class VectorDBService:
             raise VectorDBException("Failed to save vector database index", str(e))
 
     def _load_index(self) -> None:
-        """Load TF-IDF matrix and metadata from disk."""
+        """Load FAISS index and metadata from disk."""
         try:
-            index_file = f"{self.index_path}.pkl"
+            index_file = f"{self.index_path}.faiss"
+            meta_file = f"{self.index_path}.meta"
 
-            if os.path.exists(index_file):
+            if os.path.exists(index_file) and os.path.exists(meta_file):
+                # Load FAISS index
+                self.index = faiss.read_index(index_file)
+
                 # Load metadata
-                with open(index_file, "rb") as f:
+                with open(meta_file, "rb") as f:
                     metadata = pickle.load(f)
 
                 self.review_ids = metadata.get("review_ids", [])
                 self.review_texts = metadata.get("review_texts", [])
-                self.vectorizer = metadata.get("vectorizer", self.vectorizer)
-                self.tfidf_matrix = metadata.get("tfidf_matrix", None)
 
                 logger.info(
                     f"Loaded vector database with {len(self.review_ids)} reviews"
@@ -264,7 +274,8 @@ class VectorDBService:
             # Start with fresh data
             self.review_ids = []
             self.review_texts = []
-            self.tfidf_matrix = None
+            if self.index is None:
+                self.index = faiss.IndexFlatIP(self.dimension)
 
     def clear_index(self) -> None:
         """Clear the entire vector database."""
