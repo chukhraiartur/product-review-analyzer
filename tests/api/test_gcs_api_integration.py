@@ -31,7 +31,7 @@ class TestGCSAPIIntegration:
             mock_service.return_value = mock_instance
             yield mock_instance
 
-    @pytest.mark.unit
+    @pytest.mark.mock
     def test_health_check_with_gcs_status(self, client):
         """Test health check endpoint includes GCS status."""
         response = client.get("/api/v1/health/")
@@ -40,7 +40,7 @@ class TestGCSAPIIntegration:
         assert "storage_status" in data
         assert data["status"] == "healthy"
 
-    @pytest.mark.unit
+    @pytest.mark.mock
     def test_invalid_force_refresh_parameter(self, client):
         """Test API validation for force_refresh parameter."""
         response = client.post(
@@ -83,7 +83,7 @@ class TestGCSAPIIntegration:
         # Random mode requires a valid URL, so this will fail with 400
         assert response.status_code == 400  # Bad request (invalid URL for random mode)
 
-    @pytest.mark.unit
+    @pytest.mark.mock
     def test_scraping_missing_parameters(self, client):
         """Test scraping with missing required parameters."""
         # Test without URL
@@ -100,7 +100,7 @@ class TestGCSAPIIntegration:
         )
         assert response.status_code == 400  # Bad request (missing mode)
 
-    @pytest.mark.unit
+    @pytest.mark.mock
     def test_scraping_invalid_mode(self, client):
         """Test scraping with invalid mode."""
         response = client.post(

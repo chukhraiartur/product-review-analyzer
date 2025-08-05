@@ -15,7 +15,7 @@ class TestBasicAPI:
         assert response.status_code == 200
         assert "Product Review Analyzer" in response.json()["message"]
 
-    @pytest.mark.unit
+    @pytest.mark.mock
     def test_health_check(self, test_client):
         """Test health check endpoint."""
         response = test_client.get("/api/v1/health/")
@@ -54,7 +54,7 @@ class TestBasicAPI:
         response = test_client.get("/api/v1/products/999999")
         assert response.status_code == 404
 
-    @pytest.mark.unit
+    @pytest.mark.mock
     def test_search_stats(self, test_client):
         """Test search statistics endpoint."""
         response = test_client.get("/api/v1/search/stats")
@@ -75,7 +75,7 @@ class TestBasicAPI:
         assert "query" in data
         assert "results" in data
 
-    @pytest.mark.unit
+    @pytest.mark.mock
     def test_scraping_invalid_url(self, test_client):
         """Test scraping with invalid URL."""
         response = test_client.post(
@@ -84,7 +84,7 @@ class TestBasicAPI:
         )
         assert response.status_code == 400  # Bad request (invalid URL)
 
-    @pytest.mark.unit
+    @pytest.mark.mock
     def test_scraping_missing_url(self, test_client):
         """Test scraping with missing URL."""
         response = test_client.post(
@@ -93,7 +93,7 @@ class TestBasicAPI:
         )
         assert response.status_code == 400  # Bad request (missing URL)
 
-    @pytest.mark.unit
+    @pytest.mark.mock
     def test_scraping_invalid_mode(self, test_client):
         """Test scraping with invalid mode."""
         response = test_client.post(
