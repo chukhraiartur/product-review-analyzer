@@ -5,7 +5,7 @@ AI-powered product review analysis system with VistaPrint integration, sentiment
 ## 🚀 Features
 
 - **VistaPrint Integration**: Scrape product reviews from VistaPrint with full pagination support
-- **AI Sentiment Analysis**: Analyze review sentiment using OpenAI GPT-4
+- **AI Sentiment Analysis**: Analyze review sentiment using OpenAI GPT models
 - **Vector Database**: Store and search reviews using FAISS for semantic similarity
 - **Google Cloud Storage**: Store HTML pages, review images, and logs with intelligent caching
 - **RESTful API**: FastAPI-based API with comprehensive documentation
@@ -50,11 +50,60 @@ AI-powered product review analysis system with VistaPrint integration, sentiment
 
 ## 📋 Prerequisites
 
-- Python 3.11+
 - Docker and Docker Compose
-- PostgreSQL (or use Docker)
+- Google Cloud Platform account (for GCS)
 - OpenAI API key
-- Google Cloud Storage account and credentials
+- Git
+
+## 🎯 System Overview
+
+### ✅ **Core Functionality**
+
+1. **Web Scraping**: VistaPrint scraper using BeautifulSoup
+2. **Database Storage**: PostgreSQL with SQLAlchemy ORM
+3. **Media Storage**: Google Cloud Storage for images
+4. **Sentiment Analysis**: OpenAI GPT API integration
+5. **Vector Database**: FAISS for semantic search
+6. **API Endpoints**: FastAPI with GET/POST endpoints
+7. **Docker**: Full containerization
+8. **Code Quality**: Clean, tested codebase
+
+### 🔧 **Technical Implementation Details**
+
+#### **Web Scraping (BeautifulSoup)**
+- **VistaPrint Integration**: Specialized scraper for VistaPrint product pages
+- **Pagination Support**: Handles multiple review pages automatically
+- **Data Extraction**: Reviews, ratings, images, verified purchases
+- **Error Handling**: Retries, fallbacks, comprehensive logging
+- **Caching**: HTML pages cached in Google Cloud Storage
+
+#### **Sentiment Analysis (OpenAI)**
+- **Model**: GPT-3.5-turbo for cost-effective analysis
+- **Structured Output**: JSON responses with sentiment, confidence, score
+- **Fallback System**: Keyword-based analysis when API unavailable
+- **Batch Processing**: Efficient handling of multiple reviews
+- **Error Recovery**: Graceful degradation on API failures
+
+#### **Vector Database (FAISS)**
+- **Embedding Model**: Sentence Transformers (paraphrase-MiniLM-L3-v2)
+- **Index Type**: FAISS IndexFlatIP for cosine similarity
+- **Semantic Search**: Find similar reviews using vector embeddings
+- **Local Storage**: FAISS index stored locally for fast access
+- **Metadata Management**: Review IDs and texts stored alongside embeddings
+
+#### **Google Cloud Storage**
+- **HTML Caching**: 24-hour cache for product pages
+- **Image Storage**: Automatic download and storage of review images
+- **Structured Organization**: Date-based folder structure
+- **Public Access**: Images publicly accessible for web display
+- **Deduplication**: Skip existing images, only download new ones
+
+#### **Database Design (PostgreSQL)**
+- **Products Table**: Store product information and metadata
+- **Reviews Table**: Store reviews with sentiment analysis results
+- **Review Images Table**: Store image URLs and metadata
+- **Relationships**: Proper foreign key relationships
+- **Indexing**: Optimized for search and retrieval
 
 ## ⚠️ Important Notes
 
@@ -80,81 +129,211 @@ netstat -an | findstr :5432
 netstat -an | grep :5432
 ```
 
-## 🚀 Quick Start
+## 🚀 Quick Start - Complete Testing Guide
 
-### **For New Users (Each user sets up their own services)**
+### Step 1: Clone and Setup
 
-**Important**: Each user must configure their own services. Data is not shared between users for security and cost control.
-
-## 🐳 **Docker Deployment (Recommended)**
-
-### **Prerequisites**
-- Docker and Docker Compose installed
-- Git installed
-- Internet connection
-
-### **Step 1: Clone and Setup**
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/product-review-analyzer.git
+git clone <repository-url>
 cd product-review-analyzer
 
-# Copy environment file
-cp env.example .env
+# Verify all files are present
+ls -la
 ```
 
-### **Step 2: Configure Services**
+### Step 2: Set Up Environment Variables
 
-#### **A. OpenAI API Setup**
-1. Go to [OpenAI Platform](https://platform.openai.com/)
-2. Create account and add payment method
-3. Get API key from API Keys section
-4. Add credits (minimum $5 recommended)
-5. Update `.env`:
-   ```env
-   OPENAI_API_KEY=sk-your-api-key-here
-   OPENAI_MODEL=gpt-3.5-turbo
-   ```
+Create a `.env` file in the root directory:
 
-#### **B. Google Cloud Storage Setup**
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create new project
-3. Enable Cloud Storage API
-4. Create service account with Storage Object Admin role
-5. Download JSON credentials file
-6. Rename to `gcp-credentials.json` and place in `credentials/` folder
-7. Create storage bucket with public access for images
-8. Update `.env`:
-   ```env
-   GCP_PROJECT_ID=your-project-id
-   GCP_BUCKET_NAME=your-bucket-name
-   GCP_CREDENTIALS_PATH=./credentials/gcp-credentials.json
-   ```
-
-### **Step 3: Run with Docker**
 ```bash
-# Start all services
-docker-compose up -d
+# Application settings
+DEBUG=false
+TESTING=false
 
-# Check status
+# Database settings (PostgreSQL)
+DB_HOST=postgres
+DB_PORT=5432
+DB_USER=review_user
+DB_PASSWORD=review_password
+DB_NAME=review_analyzer
+
+# OpenAI settings
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-3.5-turbo
+
+# Google Cloud Storage settings
+GCP_PROJECT_ID=your_gcp_project_id
+GCP_BUCKET_NAME=your_gcs_bucket_name
+GCP_CREDENTIALS_PATH=./credentials/your_credentials_file.json
+GCP_USE_EMULATOR=false
+GCP_EMULATOR_HOST=localhost:4443
+
+# Vector database settings
+FAISS_INDEX_PATH=./data/faiss_index
+
+# Scraping settings
+REQUEST_TIMEOUT=30
+MAX_RETRIES=3
+
+# API settings
+API_HOST=0.0.0.0
+API_PORT=8000
+```
+
+### Step 3: Set Up Google Cloud Credentials
+
+1. **Create a Google Cloud Project** (if you don't have one):
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Note your Project ID
+
+2. **Enable Google Cloud Storage API**:
+   - Go to APIs & Services > Library
+   - Search for "Cloud Storage"
+   - Enable the "Cloud Storage" API
+
+3. **Create a Service Account**:
+   - Go to IAM & Admin > Service Accounts
+   - Click "Create Service Account"
+   - Give it a name (e.g., "review-analyzer")
+   - Grant "Storage Object Admin" role
+   - Create and download the JSON key file
+
+4. **Create a GCS Bucket**:
+   - Go to Cloud Storage > Buckets
+   - Click "Create Bucket"
+   - Choose a unique name (e.g., "product-review-analyzer-data")
+   - Choose a location close to you
+   - Set access control to "Uniform"
+
+5. **Place Credentials File**:
+   - Create a `credentials` folder in the project root
+   - Place your downloaded JSON credentials file in the `credentials` folder
+   - Update `GCP_CREDENTIALS_PATH` in `.env` to point to your file
+
+### Step 4: Get OpenAI API Key
+
+1. Go to [OpenAI Platform](https://platform.openai.com/)
+2. Sign up or log in
+3. Go to API Keys section
+4. Create a new API key
+5. Copy the key and add it to your `.env` file
+
+### Step 5: Run Pre-Application Tests
+
+Before starting the application, let's verify that the core functionality works:
+
+```bash
+# Run tests using the test runner (recommended)
+python scripts/run_tests.py mock
+
+# Or run specific test modes:
+python scripts/run_tests.py unit        # Unit tests only (fastest)
+python scripts/run_tests.py mock        # Unit + mock tests (recommended)
+python scripts/run_tests.py all         # All tests (requires real services)
+
+# Or using make commands:
+make test-mock                          # Unit + mock tests
+make test-unit                          # Unit tests only
+make test-all                           # All tests
+```
+
+**Expected Results:**
+- **Unit tests**: ✅ All should pass (9/9)
+- **Mock tests**: ✅ All should pass (26/26)
+- **Integration tests**: ⚠️ May fail without real OpenAI/GCS credentials (this is normal)
+
+**Note**: The CI/CD pipeline is configured to run only unit tests and mock tests, so failures in integration tests won't block deployment. Integration tests are designed to run with real external services in the CI/CD environment.
+
+**Test Modes Explained:**
+- **Unit Mode**: Fastest, tests core functionality without external dependencies
+- **Mock Mode**: Tests API endpoints with mocked external services (recommended for development)
+- **All Mode**: Full test suite including integration tests with real services
+
+### Step 6: Start the Application
+
+```bash
+# Build and start all services
+docker-compose up --build -d
+
+# Check if services are running
 docker-compose ps
 
-# View logs
-docker-compose logs -f app
+# Expected output:
+# NAME                  IMAGE                         COMMAND                  SERVICE    CREATED       STATUS                    PORTS
+# review_analyzer_app   product-review-analyzer-app   "poetry run uvicorn …"   app        5 hours ago   Up 15 seconds (healthy)   0.0.0.0:8000->8000/tcp
+# review_analyzer_db    postgres:15-alpine            "docker-entrypoint.s…"   postgres   5 hours ago   Up 26 seconds (healthy)   0.0.0.0:5433->5432/tcp
 ```
 
-### **Step 4: Verify Installation**
+### Step 7: Verify Application Health
+
 ```bash
 # Check health endpoint
-curl http://localhost:8000/health
+curl http://localhost:8000/api/v1/health/
 
-# Open API documentation
-open http://localhost:8000/docs
+# Expected response:
+{
+  "status": "healthy",
+  "timestamp": "2025-08-05T02:28:42.733312",
+  "version": "Product Review Analyzer",
+  "database_status": "healthy",
+  "vector_db_status": "healthy",
+  "storage_status": "healthy"
+}
 ```
 
-### **Step 5: Test Scraping**
+### Step 8: Test All API Endpoints
+
+#### 8.1 Test Health and Documentation
 ```bash
-# Scrape a product (example URL)
+# Health check
+curl http://localhost:8000/api/v1/health/
+
+# API documentation
+open http://localhost:8000/docs
+# or
+curl http://localhost:8000/docs
+
+# ReDoc documentation
+open http://localhost:8000/redoc
+# or
+curl http://localhost:8000/redoc
+```
+
+#### 8.2 Test Vector Database Search
+```bash
+# Get search statistics
+curl http://localhost:8000/api/v1/search/stats
+
+# Expected response:
+{
+  "vector_database": {
+    "total_reviews": 0,
+    "total_vectors": 0,
+    "dimension": 384,
+    "index_type": "FAISS FlatIP"
+  },
+  "search_available": false
+}
+
+# Test search (should return empty results initially)
+curl -X POST "http://localhost:8000/api/v1/search/reviews" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "test query", "k": 5}'
+
+# Expected response:
+{
+  "query": "test query",
+  "results": [],
+  "processing_time": 0.123,
+  "total_results": 0
+}
+```
+
+#### 8.3 Test Product Scraping
+```bash
+# Scrape a product (this will test scraping, sentiment analysis, and vector storage)
 curl -X POST "http://localhost:8000/api/v1/products/scrape" \
   -H "Content-Type: application/json" \
   -d '{
@@ -162,74 +341,138 @@ curl -X POST "http://localhost:8000/api/v1/products/scrape" \
     "mode": "scrape",
     "force_refresh": false
   }'
+
+# Expected response:
+{
+  "message": "Product scraping completed successfully",
+  "product_id": 1,
+  "reviews_count": 25,
+  "processing_time": 45.2
+}
 ```
 
-### **Step 6: Get Results**
+#### 8.4 Test Product Retrieval
 ```bash
-# Get product details
-curl http://localhost:8000/api/v1/products/1
+# Get all products
+curl http://localhost:8000/api/v1/products/
 
-# Search reviews
+# Get specific product
+curl http://localhost:8000/api/v1/products/1
+```
+
+#### 8.5 Test Enhanced Search (after scraping)
+```bash
+# Get updated search statistics
+curl http://localhost:8000/api/v1/search/stats
+
+# Search for reviews with sentiment
 curl -X POST "http://localhost:8000/api/v1/search/reviews" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "great quality",
     "k": 5
   }'
+
+# Expected response:
+{
+  "query": "great quality",
+  "results": [
+    {
+      "review_id": 1,
+      "title": "Excellent Product",
+      "text": "This is a great quality product...",
+      "rating": 5,
+      "sentiment": "positive",
+      "similarity_score": 0.85
+    }
+  ],
+  "processing_time": 0.234,
+  "total_results": 5
+}
 ```
 
-## 💻 **Local Development Setup**
+### Step 9: Test Error Handling
 
-### **Prerequisites**
-- Python 3.11+
-- Poetry
-- PostgreSQL (or use Docker)
-
-### **Step 1: Setup Database**
 ```bash
-# Option A: Use Docker for database only
-docker-compose -f docker-compose.dev.yml up -d postgres
+# Test invalid URL
+curl -X POST "http://localhost:8000/api/v1/products/scrape" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "invalid-url",
+    "mode": "scrape",
+    "force_refresh": false
+  }'
 
-# Option B: Install PostgreSQL locally
-# Create database and user manually
+# Expected: 400 Bad Request
+
+# Test non-existent product
+curl http://localhost:8000/api/v1/products/999
+
+# Expected: 404 Not Found
 ```
 
-### **Step 2: Install Dependencies**
+### Step 10: Run Post-Application Tests
+
 ```bash
-# Install Poetry if not installed
-curl -sSL https://install.python-poetry.org | python3 -
+# Run tests again to ensure everything still works
+poetry run pytest tests/ -v
 
-# Install dependencies
-poetry install
-
-# Activate virtual environment
-poetry shell
+# Run specific test categories
+poetry run pytest tests/api/ -v
+poetry run pytest tests/unit/ -v
 ```
 
-### **Step 3: Configure Environment**
+### Step 11: Monitor Application Logs
+
 ```bash
-# Copy environment file
-cp env.example .env
+# View application logs
+docker-compose logs -f app
 
-# Edit .env with your settings
-# (Follow same steps as Docker setup above)
+# View database logs
+docker-compose logs -f postgres
+
+# View all logs
+docker-compose logs -f
 ```
 
-### **Step 4: Initialize Database**
+### Step 12: Clean Shutdown
+
 ```bash
-# Create database tables
-poetry run python scripts/init_db.py
+# Stop all services gracefully
+docker-compose down
+
+# Verify all containers are stopped
+docker-compose ps
+
+# Expected: No containers running
+
+# Optional: Remove all data (WARNING: This will delete everything)
+docker-compose down -v
 ```
 
-### **Step 5: Run Application**
-```bash
-# Start the application
-poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
+## Complete Testing Checklist
 
-## 🔧 **Configuration**
+- [ ] ✅ Repository cloned successfully
+- [ ] ✅ Environment variables configured
+- [ ] ✅ Google Cloud credentials set up
+- [ ] ✅ OpenAI API key configured
+- [ ] ✅ Pre-application tests run
+- [ ] ✅ Docker containers started successfully
+- [ ] ✅ Health endpoint returns healthy status
+- [ ] ✅ API documentation accessible
+- [ ] ✅ Vector database statistics retrieved
+- [ ] ✅ Empty search returns correct response
+- [ ] ✅ Product scraping completed successfully
+- [ ] ✅ Products retrieved from database
+- [ ] ✅ Enhanced search with results works
+- [ ] ✅ Error handling works correctly
+- [ ] ✅ Post-application tests pass
+- [ ] ✅ Application logs monitored
+- [ ] ✅ Clean shutdown completed
 
-### **Environment Variables**
+## 🔧 Configuration
+
+### Environment Variables
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
@@ -245,39 +488,92 @@ poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 | `DB_NAME` | Database name | ❌ | `review_analyzer` |
 | `FAISS_INDEX_PATH` | Vector database path | ❌ | `./data/faiss_index` |
 
-### **API Endpoints**
+### API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/health` | GET | Health check |
+| `/api/v1/health/` | GET | Health check |
 | `/docs` | GET | API documentation |
 | `/api/v1/products/scrape` | POST | Scrape product reviews |
 | `/api/v1/products/{id}` | GET | Get product details |
 | `/api/v1/search/reviews` | POST | Search reviews semantically |
+| `/api/v1/search/stats` | GET | Vector database statistics |
 
-## 🧪 **Testing**
+## 🧪 Testing
 
-### **Run Tests**
+### Test Structure
+
+The project uses a multi-layered testing approach:
+
+#### **1. Unit Tests** (`tests/unit/`)
+- **Purpose**: Test individual functions and classes in isolation
+- **External Dependencies**: None (fully mocked)
+- **CI/CD**: Runs on every push/PR
+- **Coverage**: Core business logic
+
+#### **2. Mock Tests** (`tests/api/`)
+- **Purpose**: Test API endpoints with mocked external services
+- **External Dependencies**: Mocked (OpenAI, GCS, VistaPrint)
+- **CI/CD**: Runs on every push/PR
+- **Coverage**: API functionality and error handling
+
+#### **3. Integration Tests** (`tests/integration/`)
+- **Purpose**: Test with real external services
+- **External Dependencies**: Real (OpenAI, GCS, VistaPrint)
+- **CI/CD**: Runs weekly and on manual trigger
+- **Coverage**: End-to-end functionality
+
+### Running Tests Locally
+
 ```bash
-# Run all tests
+# Run all tests (unit + mock)
 poetry run pytest
 
+# Run specific test categories
+poetry run pytest tests/unit/          # Unit tests only
+poetry run pytest tests/api/           # API tests with mocks
+poetry run pytest tests/integration/   # Integration tests (requires real services)
+
 # Run with coverage
-poetry run pytest --cov=app
+poetry run pytest --cov=app --cov-report=html
 
 # Run specific test file
 poetry run pytest tests/test_api.py
 ```
 
-### **Test Types**
-- **Unit Tests**: Test individual functions
+### CI/CD Pipeline
+
+The GitHub Actions pipeline is structured to ensure fast feedback:
+
+#### **Main Pipeline** (runs on every push/PR):
+1. **Linting**: Black, Ruff, MyPy
+2. **Unit Tests**: Core logic without external dependencies
+3. **Mock Tests**: API tests with mocked services
+4. **Docker Build**: Verify container builds successfully
+5. **Security Scan**: Bandit security analysis
+
+#### **Integration Pipeline** (runs weekly + manual):
+1. **Integration Tests**: Tests with real external services
+2. **End-to-End Tests**: Full application testing in Docker
+
+### Test Configuration
+
+Tests use different configurations based on the environment:
+
+- **Unit/Mock Tests**: `TESTING=true` (uses SQLite in-memory database)
+- **Integration Tests**: `TESTING=false` (uses real PostgreSQL and external services)
+
+### Test Types
+
+- **Unit Tests**: Test individual functions and classes
 - **Integration Tests**: Test service interactions
-- **API Tests**: Test HTTP endpoints
+- **API Tests**: Test HTTP endpoints with mocked dependencies
 - **Mock Tests**: Test with mocked external services
 
-## 🚀 **Production Deployment**
+## 🚀 Production Deployment
 
-### **Using Docker Compose**
+### Using Docker Compose
+
 ```bash
 # Build and start
 docker-compose up -d --build
@@ -286,7 +582,8 @@ docker-compose up -d --build
 docker-compose up -d --scale app=3
 ```
 
-### **Using Docker Swarm**
+### Using Docker Swarm
+
 ```bash
 # Initialize swarm
 docker swarm init
@@ -295,62 +592,60 @@ docker swarm init
 docker stack deploy -c docker-compose.yml review-analyzer
 ```
 
-### **Using Kubernetes**
+### Using Kubernetes
+
 ```bash
 # Apply manifests
 kubectl apply -f k8s/
 ```
 
-## 🔍 **Troubleshooting**
+## 🔍 Troubleshooting
 
-### **Common Issues**
+### Common Issues
 
-#### **Database Connection Failed**
-```bash
-# Check if PostgreSQL is running
-docker-compose ps postgres
+1. **Database Connection Error**:
+   ```bash
+   # Check if PostgreSQL container is running
+   docker-compose ps postgres
+   
+   # Check database logs
+   docker-compose logs postgres
+   
+   # Restart database
+   docker-compose restart postgres
+   ```
 
-# Check logs
-docker-compose logs postgres
+2. **Google Cloud Storage Error**:
+   - Verify credentials file path in `.env`
+   - Check GCS bucket permissions
+   - Ensure GCS API is enabled
 
-# Restart database
-docker-compose restart postgres
-```
+3. **OpenAI API Error**:
+   - Verify API key is correct
+   - Check API key has sufficient credits
+   - Ensure you're using a valid model name
 
-#### **OpenAI API Errors**
-- Verify API key is correct
-- Check if you have sufficient credits
-- Ensure model name is correct
+4. **Vector Database Issues**:
+   - Check if FAISS index files exist in `./data/`
+   - Ensure sufficient disk space
 
-#### **GCS Connection Issues**
-- Verify credentials file exists
-- Check bucket permissions
-- Ensure project ID is correct
+### Logs and Monitoring
 
-#### **Application Won't Start**
-```bash
-# Check logs
-docker-compose logs app
-
-# Rebuild container
-docker-compose up -d --build app
-```
-
-### **Logs and Monitoring**
 ```bash
 # View application logs
-docker-compose logs -f app
+docker-compose logs app
 
 # View database logs
-docker-compose logs -f postgres
+docker-compose logs postgres
 
 # Check health status
-curl http://localhost:8000/health
+curl http://localhost:8000/api/v1/health/
 ```
 
-## 📊 **Usage Examples**
+## 📊 Usage Examples
 
-### **Scrape Product Reviews**
+### Scrape Product Reviews
+
 ```bash
 curl -X POST "http://localhost:8000/api/v1/products/scrape" \
   -H "Content-Type: application/json" \
@@ -358,210 +653,6 @@ curl -X POST "http://localhost:8000/api/v1/products/scrape" \
     "url": "https://www.vistaprint.com/promotional-products/drinkware/sports-water-bottles/yeti-r-rambler-r-water-bottle-18-oz",
     "mode": "scrape",
     "force_refresh": false
-  }'
-```
-
-### **Get Product Details**
-```bash
-curl http://localhost:8000/api/v1/products/1
-```
-
-### **Search Reviews**
-```bash
-curl -X POST "http://localhost:8000/api/v1/search/reviews" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "excellent quality",
-    "k": 10
-  }'
-```
-
-### **Health Check**
-```bash
-curl http://localhost:8000/health
-```
-
-## 🔒 **Security Notes**
-
-- ✅ **Never commit credentials** to version control
-- ✅ **Use environment variables** for sensitive data
-- ✅ **Each user configures their own services** - no shared data access
-- ✅ **Isolated data storage** - each user has their own GCS bucket and database
-- ✅ **Keep credentials secure** and never share them
-
-### 1. Clone the repository
-
-```bash
-git clone <repository-url>
-cd product-review-analyzer
-```
-
-### 2. Set up environment variables
-
-```bash
-cp env.example .env
-```
-
-Edit `.env` file with your configuration:
-
-```env
-# Database settings
-# Note: If you have local PostgreSQL installed, use DB_PORT=5433 to avoid conflicts
-DB_HOST=localhost
-DB_PORT=5433
-DB_USER=review_user
-DB_PASSWORD=review_password
-DB_NAME=review_analyzer
-
-# OpenAI settings
-OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-4
-
-# Google Cloud Storage settings
-GCP_PROJECT_ID=your-gcp-project-id
-GCP_BUCKET_NAME=your-gcp-bucket-name
-GCP_CREDENTIALS_PATH=./credentials/gcp-credentials.json
-
-# API settings
-API_HOST=0.0.0.0
-API_PORT=8000
-DEBUG=false
-```
-
-### 3. Install dependencies
-
-```bash
-poetry install
-```
-
-### 4. Start PostgreSQL with Docker
-
-```bash
-docker-compose -f docker-compose.dev.yml up -d
-```
-
-### 5. Initialize database
-
-```bash
-# Option 1: Using Poetry script
-poetry run init-db
-
-# Option 2: Using Makefile
-make init-db
-
-# Option 3: Direct script execution
-python scripts/init_db.py
-```
-
-### 6. Run the application
-
-```bash
-# Option 1: Using Poetry script
-poetry run dev
-
-# Option 2: Using Makefile
-make dev
-
-# Option 3: Direct uvicorn command
-poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### 7. Access the API
-
-- API Documentation: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
-
-## 🛠️ Development Commands
-
-### Using Poetry Scripts
-
-```bash
-# Initialize database
-poetry run init-db
-
-# Start development server
-poetry run dev
-
-# Run tests
-poetry run test
-
-# Run tests with coverage
-poetry run test-cov
-
-# Run linter
-poetry run lint
-
-# Format code
-poetry run format
-
-# Type checking
-poetry run type-check
-```
-
-### Using Makefile
-
-```bash
-# Show all available commands
-make help
-
-# Install dependencies
-make install
-
-# Start development server
-make dev
-
-# Run tests
-make test
-
-# Run tests with coverage
-make test-cov
-
-# Format and lint code
-make format
-make lint
-
-# Type checking
-make type-check
-
-# Initialize database
-make init-db
-
-# Run database migrations
-make migrate
-
-# Clean generated files
-make clean
-```
-
-## 📚 API Endpoints
-
-### Products
-
-- `POST /api/v1/products/scrape` - Scrape product reviews from VistaPrint
-- `GET /api/v1/products/{product_id}` - Get product details with reviews
-- `GET /api/v1/products/` - List all products
-
-### Search
-
-- `POST /api/v1/search/reviews` - Semantic search in reviews
-- `GET /api/v1/search/stats` - Vector database statistics
-
-### Health
-
-- `GET /health` - Application health check
-- `GET /health/ready` - Readiness check
-- `GET /health/live` - Liveness check
-
-## 🔧 Usage Examples
-
-### Scrape VistaPrint Product
-
-```bash
-curl -X POST "http://localhost:8000/api/v1/products/scrape" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://www.vistaprint.com/photo-gifts/paper-coasters",
-    "mode": "scrape"
   }'
 ```
 
@@ -577,212 +668,28 @@ curl "http://localhost:8000/api/v1/products/{product_id}"
 curl -X POST "http://localhost:8000/api/v1/search/reviews" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "quality product",
-    "limit": 10
+    "query": "excellent quality",
+    "k": 10
   }'
 ```
 
-## 🧪 Testing
-
-The project includes comprehensive testing with different types of tests:
-
-### Test Types
-
-- **Unit Tests** (`-m "unit"`): Test individual functions and classes in isolation
-- **Integration Tests** (`-m "integration"`): Test interactions between components
-- **API Tests** (`-m "api"`): Test FastAPI endpoints and HTTP responses
-- **GCS Tests** (`-m "gcs"`): Test Google Cloud Storage functionality
-
-### Running Tests
+### Health Check
 
 ```bash
-# Run all tests
-poetry run pytest tests/ -v --cov=app --cov-report=term-missing
-
-# Run specific test types
-poetry run pytest tests/ -m "unit" -v
-poetry run pytest tests/ -m "integration" -v
-poetry run pytest tests/ -m "api" -v
-poetry run pytest tests/ -m "gcs" -v
-
-# Run with Makefile
-make test              # All tests
-make test-unit         # Unit tests only
-make test-integration  # Integration tests only
-make test-api          # API tests only
-make test-gcs          # GCS tests only
+curl http://localhost:8000/api/v1/health/
 ```
 
-### Test Coverage
+## 🔒 Security Notes
 
-- **Minimum Coverage**: 70%
-- **Coverage Reports**: HTML and XML formats
-- **Coverage Location**: `htmlcov/` directory
-
-### Why Some Tests Are Limited
-
-- **End-to-End Tests**: Not implemented due to external dependencies (VistaPrint, OpenAI)
-- **Performance Tests**: Not implemented due to CI/CD time constraints
-- **Load Tests**: Not implemented due to infrastructure requirements
-
-### Run linting
-
-```bash
-poetry run black app/ tests/
-poetry run ruff check app/ tests/
-poetry run mypy app/
-```
-
-## 🐳 Docker Deployment
-
-### Development
-
-```bash
-# Start only PostgreSQL
-docker-compose -f docker-compose.dev.yml up -d
-
-# Run application locally
-poetry run uvicorn app.main:app --reload
-```
-
-### Production
-
-```bash
-# Start full stack
-docker-compose up -d
-```
-
-## ☁️ Google Cloud Storage Integration
-
-The system uses Google Cloud Storage for intelligent file management with the following features:
-
-### ✅ **Completed Integration**
-
-- **HTML Caching**: VistaPrint scraper automatically saves HTML pages to GCS
-- **Force Refresh**: API parameter controls whether to use cached HTML or fetch fresh content
-- **Structured Storage**: Files organized by date and product slug
-- **Error Handling**: Scraping continues even if GCS operations fail
-- **Logging**: Comprehensive logging of GCS operations
-
-## 🤖 OpenAI Integration
-
-The system uses OpenAI GPT models for sentiment analysis of product reviews.
-
-### ✅ **Completed Integration**
-
-- **Sentiment Analysis**: Automatic analysis of review sentiment (positive, neutral, negative)
-- **Fallback Mechanism**: Keyword-based analysis when OpenAI API is unavailable
-- **Batch Processing**: Support for analyzing multiple reviews
-- **Confidence Scoring**: Sentiment confidence and reasoning
-- **Error Handling**: Graceful degradation when API fails
-
-## 🔍 FAISS Vector Database
-
-The system uses FAISS for semantic search of reviews using vector embeddings.
-
-### ✅ **Completed Integration**
-
-- **Vector Embeddings**: Automatic generation of review embeddings using Sentence Transformers
-- **Semantic Search**: Find similar reviews using cosine similarity
-- **Local Storage**: FAISS index stored locally for fast access
-- **Metadata Storage**: Review IDs and texts stored alongside embeddings
-- **Search API**: RESTful endpoints for semantic review search
-
-### Storage Structure
-
-```
-bucket-name/
-├── html/
-│   └── year=YYYY/
-│       └── month=MM/
-│           └── day=DD/
-│               └── product_slug_timestamp.html
-├── images/
-│   └── product_slug/
-│       ├── external_id_1.jpg
-│       ├── external_id_2.jpg
-│       └── external_id_3.jpg
-└── logs/
-    └── year=YYYY/
-        └── month=MM/
-            └── day=DD/
-                └── logs_timestamp.txt
-```
-
-### Key Features
-
-- **HTML Caching**: 24-hour cache for product HTML pages to reduce scraping overhead
-- **Force Refresh**: API parameter to bypass cache and fetch fresh HTML
-- **Image Storage**: Automatic download and storage of review images with deduplication
-- **Structured Organization**: Date-based folder structure for easy management
-- **Public Access**: Images are publicly accessible for web display
-- **Automatic Cleanup**: Configurable retention policy for old files
-
-### API Parameters
-
-- **`force_refresh`**: Boolean parameter to force new HTML scraping (default: false)
-- **Cache Strategy**: Use existing HTML if available and less than 24 hours old
-- **Image Deduplication**: Skip existing images, only download new ones
-
-### Setup Instructions
-
-#### **Option 1: Using Service Account JSON (Recommended)**
-
-1. **Create Google Cloud Project**:
-   - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Create new project or select existing
-   - Enable Cloud Storage API
-
-2. **Create Service Account**:
-   - IAM & Admin → Service Accounts
-   - Create service account with Storage Object Admin role
-   - Download JSON credentials file
-
-3. **Create Storage Bucket**:
-   - Cloud Storage → Buckets
-   - Create bucket with unique name
-   - Configure public access for images
-
-4. **Setup Credentials File**:
-   ```bash
-   # Place your credentials file in the credentials folder
-   # Rename it to gcp-credentials.json
-   # The file should be at: credentials/gcp-credentials.json
-   ```
-
-5. **Configure Environment**:
-   ```env
-   GCP_PROJECT_ID=your-project-id
-   GCP_BUCKET_NAME=your-bucket-name
-   GCP_CREDENTIALS_PATH=./credentials/gcp-credentials.json
-   ```
-
-#### **Option 2: Using Default Credentials (Local Development)**
-
-For local development, you can use Google Cloud CLI:
-
-```bash
-# Install Google Cloud CLI
-gcloud auth application-default login
-
-# Set project
-gcloud config set project your-project-id
-
-# No need to set GCP_CREDENTIALS_JSON in .env
-```
-
-### 🔒 **Security Notes**
-
-- ✅ **Never commit credentials files** to version control
-- ✅ **Use environment variables** for credentials
-- ✅ **GitHub Secrets** for CI/CD deployment
-- ✅ **Local .env file** for development (already in .gitignore)
+- ✅ **Never commit credentials** to version control
+- ✅ **Use environment variables** for sensitive data
 - ✅ **Each user configures their own services** - no shared data access
 - ✅ **Isolated data storage** - each user has their own GCS bucket and database
+- ✅ **Keep credentials secure** and never share them
 
-## 📋 **Detailed Setup Instructions**
+## 📋 Detailed Setup Instructions
 
-### **Getting OpenAI API Key**
+### Getting OpenAI API Key
 
 1. **Create OpenAI Account**:
    - Go to [OpenAI Platform](https://platform.openai.com/)
@@ -799,7 +706,7 @@ gcloud config set project your-project-id
    - Add credits to your account
    - Minimum $5 recommended for testing
 
-### **Getting Google Cloud Credentials**
+### Getting Google Cloud Credentials
 
 1. **Create Google Cloud Project**:
    - Go to [Google Cloud Console](https://console.cloud.google.com/)
@@ -838,7 +745,7 @@ gcloud config set project your-project-id
    - Place it in `credentials/` folder
    - Update `.env` file with your project ID and bucket name
 
-### **Creating Google Cloud Storage Bucket**
+### Creating Google Cloud Storage Bucket
 
 1. **Create Bucket**:
    - Go to Cloud Storage → Buckets
@@ -854,35 +761,6 @@ gcloud config set project your-project-id
    - Principal: `allUsers`
    - Role: "Storage Object Viewer"
    - Click "Save"
-
-### **Setting up PostgreSQL Database**
-
-**Option 1: Using Docker (Recommended for testing)**
-```bash
-# Start PostgreSQL with Docker
-docker-compose -f docker-compose.dev.yml up -d
-
-# Database will be available at:
-# Host: localhost
-# Port: 5433
-# User: review_user
-# Password: review_password
-# Database: review_analyzer
-```
-
-**Option 2: Using local PostgreSQL**
-```bash
-# Install PostgreSQL locally
-# Create database and user
-# Update .env with your settings
-```
-   GCP_BUCKET_NAME=your-bucket-name
-   GCP_CREDENTIALS_PATH=./credentials/gcp-credentials.json
-   ```
-
-5. **Place Credentials**:
-   - Create `credentials/` folder
-   - Place JSON file as `gcp-credentials.json`
 
 ## 📊 VistaPrint Integration
 
@@ -934,9 +812,97 @@ poetry run alembic revision --autogenerate -m "Description"
 poetry run alembic upgrade head
 ```
 
+## 🧪 Testing
+
+The project includes a comprehensive testing system with different modes for different environments:
+
+### Test Categories
+
+- **Unit Tests** (`tests/unit/`): Fast, isolated tests that work everywhere
+- **Mock Tests** (`tests/api/`): Tests with mocked dependencies that work everywhere
+- **Integration Tests** (`tests/integration/`): Tests that require real external services (GCS, OpenAI, etc.)
+
+### Test Modes
+
+The project supports different test modes for different environments:
+
+- **Unit Mode**: Only unit tests (fastest, works everywhere)
+- **Mock Mode**: Unit + mock tests (works everywhere)
+- **Local Mode**: Unit + mock + local-specific tests
+- **Container Mode**: Unit + mock + container-specific tests
+- **All Mode**: All tests including integration tests (requires real services)
+- **CI Mode**: Unit + mock tests for CI/CD pipeline
+
+### Running Tests
+
+#### Using the Test Runner Script
+
+```bash
+# Run tests based on environment (recommended)
+python scripts/run_tests.py
+
+# Run specific test modes
+python scripts/run_tests.py unit        # Unit tests only
+python scripts/run_tests.py mock        # Unit + mock tests
+python scripts/run_tests.py local       # Local environment tests
+python scripts/run_tests.py container   # Container environment tests
+python scripts/run_tests.py all         # All tests (including integration)
+python scripts/run_tests.py ci          # CI/CD pipeline tests
+```
+
+#### Using Make Commands
+
+```bash
+# Run tests based on environment
+make test
+
+# Run specific test modes
+make test-unit        # Unit tests only
+make test-mock        # Unit + mock tests
+make test-local       # Local environment tests
+make test-container   # Container environment tests
+make test-all         # All tests (including integration)
+make test-ci          # CI/CD pipeline tests
+```
+
+#### Using Poetry Directly
+
+```bash
+# Run all tests
+poetry run pytest tests/ -v
+
+# Run specific test categories
+poetry run pytest tests/unit/ -v                    # Unit tests only
+poetry run pytest tests/api/ -v                     # API tests only
+poetry run pytest tests/integration/ -v             # Integration tests only
+
+# Run tests with coverage
+poetry run pytest tests/ --cov=app --cov-report=html
+
+# Run tests with specific markers
+poetry run pytest tests/ -m "unit"                  # Unit tests
+poetry run pytest tests/ -m "mock"                  # Mock tests
+poetry run pytest tests/ -m "integration"           # Integration tests
+poetry run pytest tests/ -m "not integration"       # All tests except integration
+```
+
+### Test Environment Variables
+
+The test runner automatically detects the environment:
+
+- `DOCKER_CONTAINER=1`: Runs container mode tests
+- `CI=1`: Runs CI mode tests
+- Default: Runs local mode tests
+
+### Test Results
+
+- **Unit Tests**: 9/9 passed ✅
+- **Mock Tests**: 26/26 passed ✅
+- **Integration Tests**: Require real services (run separately)
+
 ## 📈 Monitoring
 
-- **Health checks**: `/health`, `/health/ready`, `/health/live`
+- **Health checks**: `/api/v1/health/`, `/api/v1/health/ready`, `/api/v1/health/live`
 - **Logging**: Structured logging with rotation
 - **Metrics**: Processing time, success rates, error tracking
 
@@ -951,6 +917,7 @@ poetry run alembic upgrade head
 ## 📄 License
 
 This project is licensed under the MIT License.
+
 ## 🆘 Support
 
 For support and questions, please open an issue in the repository.
