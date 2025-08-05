@@ -133,10 +133,14 @@ addopts = [
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests (require real services)",
+    "unit: marks tests as unit tests (work everywhere)",
     "api: marks tests as API integration tests",
-    "gcs: marks tests as Google Cloud Storage tests"
+    "gcs: marks tests as Google Cloud Storage tests",
+    "mock: marks tests as mock tests (work everywhere with mocks)",
+    "container: marks tests as container-specific tests",
+    "local: marks tests as local-only tests",
+    "real_services: marks tests that require real external services"
 ]
 
 [tool.poetry.scripts]
