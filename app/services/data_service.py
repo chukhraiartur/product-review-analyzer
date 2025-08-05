@@ -54,15 +54,30 @@ class DataService:
             logger.info(f"Saving VistaPrint product: {vistaprint_product.name}")
             start_time = time.time()
 
-            # Create new product
-            product = Product(
-                product_slug=vistaprint_product.product_slug,
-                title=vistaprint_product.name,  # Use name as title in DB
-                url=vistaprint_product.url,
-                source="vistaprint",
+            # Check if product already exists
+            existing_product = (
+                self.db.query(Product)
+                .filter(Product.product_slug == vistaprint_product.product_slug)
+                .first()
             )
 
-            self.db.add(product)
+            if existing_product:
+                logger.info(f"Product already exists, updating: {existing_product.id}")
+                # Update existing product
+                existing_product.title = vistaprint_product.name
+                existing_product.url = vistaprint_product.url
+                existing_product.updated_at = datetime.utcnow()
+                product = existing_product
+            else:
+                # Create new product
+                product = Product(
+                    product_slug=vistaprint_product.product_slug,
+                    title=vistaprint_product.name,  # Use name as title in DB
+                    url=vistaprint_product.url,
+                    source="vistaprint",
+                )
+                self.db.add(product)
+
             self.db.flush()  # Get the product ID
 
             # Save reviews
@@ -92,8 +107,9 @@ class DataService:
             self.db.commit()
 
             processing_time = time.time() - start_time
+            action = "updated" if existing_product else "saved"
             logger.info(
-                f"Successfully saved product {product.id} with {total_reviews} reviews "
+                f"Successfully {action} product {product.id} with {total_reviews} reviews "
                 f"and {total_images} images in {processing_time:.2f} seconds"
             )
 

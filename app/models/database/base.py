@@ -33,7 +33,9 @@ def get_session_local():
     """Get session local (lazy initialization)."""
     global _SessionLocal
     if _SessionLocal is None:
-        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
+        _SessionLocal = sessionmaker(
+            autocommit=False, autoflush=False, bind=get_engine()
+        )
     return _SessionLocal
 
 
@@ -54,5 +56,5 @@ def create_tables() -> None:
     # Skip database operations in test environment
     if settings.testing:
         return
-    
+
     Base.metadata.create_all(bind=get_engine())

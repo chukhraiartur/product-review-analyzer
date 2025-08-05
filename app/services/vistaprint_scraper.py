@@ -42,10 +42,10 @@ class VistaPrintScraper:
         "https://www.vistaprint.com/photo-gifts/paper-coasters",
         # 9 reviews (1 request to get all reviews, there are images in reviews)
         "https://www.vistaprint.com/promotional-products/drinkware/sports-water-bottles/yeti-r-rambler-r-water-bottle-18-oz",
-        # 6979 reviews (many requests to get all reviews)
-        "https://www.vistaprint.com/business-cards/glossy",
-        # no reviews
-        "https://www.vistaprint.com/clothing-bags/clothing-accessories/touch-screen-gloves-in-pouch",
+        # 6979 reviews (many requests to get all reviews) - COMMENTED OUT: too many reviews
+        # "https://www.vistaprint.com/business-cards/glossy",
+        # no reviews - COMMENTED OUT: no reviews
+        # "https://www.vistaprint.com/clothing-bags/clothing-accessories/touch-screen-gloves-in-pouch",
     ]
 
     def __init__(

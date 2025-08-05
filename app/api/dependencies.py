@@ -50,7 +50,7 @@ def get_data_service(
 def get_database() -> Session:
     """Get database session."""
     db_generator = get_db()
-    if hasattr(db_generator, '__next__'):
+    if hasattr(db_generator, "__next__"):
         # It's a generator, get the first value
         return next(db_generator)
     else:

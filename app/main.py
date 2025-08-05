@@ -15,10 +15,11 @@ from app.models.database import create_tables
 
 logger = logging.getLogger(__name__)
 
+
 def create_app() -> FastAPI:
     """Create FastAPI application with all setup."""
     settings = get_settings()
-    
+
     # Setup logging
     setup_logging(
         log_level="DEBUG" if settings.debug else "INFO",
@@ -58,14 +59,18 @@ def create_app() -> FastAPI:
     )
 
     @app.exception_handler(ReviewAnalyzerException)
-    async def review_analyzer_exception_handler(request: Request, exc: ReviewAnalyzerException):
+    async def review_analyzer_exception_handler(
+        request: Request, exc: ReviewAnalyzerException
+    ):
         logger.error(f"Application exception: {str(exc)}")
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
         logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
-        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+        return JSONResponse(
+            status_code=500, content={"detail": "Internal server error"}
+        )
 
     app.include_router(health.router, prefix="/api/v1", tags=["health"])
     app.include_router(products.router, prefix="/api/v1", tags=["products"])
@@ -85,6 +90,7 @@ def create_app() -> FastAPI:
         return {"message": "API documentation available at /docs"}
 
     return app
+
 
 # For normal run
 app = create_app()
