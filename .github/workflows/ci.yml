@@ -394,6 +394,45 @@ jobs:
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+      continue-on-error: true
+      
+    - name: Check if required secrets are available
+      run: |
+        echo "Checking required secrets for integration tests..."
+        
+        if [ -z "${{ secrets.GCP_CREDENTIALS_JSON }}" ]; then
+          echo "❌ GCP_CREDENTIALS_JSON secret is not available"
+          echo "To run integration tests, add GCP_CREDENTIALS_JSON secret to repository settings."
+          exit 1
+        else
+          echo "✅ GCP_CREDENTIALS_JSON is available"
+        fi
+        
+        if [ -z "${{ secrets.OPENAI_API_KEY }}" ]; then
+          echo "❌ OPENAI_API_KEY secret is not available"
+          echo "To run integration tests, add OPENAI_API_KEY secret to repository settings."
+          exit 1
+        else
+          echo "✅ OPENAI_API_KEY is available"
+        fi
+        
+        if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
+          echo "❌ GCP_PROJECT_ID secret is not available"
+          echo "To run integration tests, add GCP_PROJECT_ID secret to repository settings."
+          exit 1
+        else
+          echo "✅ GCP_PROJECT_ID is available"
+        fi
+        
+        if [ -z "${{ secrets.GCP_BUCKET_NAME }}" ]; then
+          echo "❌ GCP_BUCKET_NAME secret is not available"
+          echo "To run integration tests, add GCP_BUCKET_NAME secret to repository settings."
+          exit 1
+        else
+          echo "✅ GCP_BUCKET_NAME is available"
+        fi
+        
+        echo "✅ All required secrets are available. Proceeding with integration tests."
         
     - name: Create credentials directory
       run: mkdir -p credentials

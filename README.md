@@ -556,6 +556,8 @@ The GitHub Actions pipeline is structured to ensure fast feedback:
 1. **Integration Tests**: Tests with real external services
 2. **End-to-End Tests**: Full application testing in Docker
 
+**Note**: Integration tests require GitHub secrets to be configured. See [GitHub Secrets Setup](#github-secrets-setup) below.
+
 ### Test Configuration
 
 Tests use different configurations based on the environment:
@@ -569,6 +571,22 @@ Tests use different configurations based on the environment:
 - **Integration Tests**: Test service interactions
 - **API Tests**: Test HTTP endpoints with mocked dependencies
 - **Mock Tests**: Test with mocked external services
+
+### GitHub Secrets Setup
+
+Integration tests require the following GitHub secrets to be configured in your repository:
+
+1. **GCP_CREDENTIALS_JSON**: Google Cloud Service Account credentials (JSON content)
+2. **OPENAI_API_KEY**: OpenAI API key for sentiment analysis
+3. **GCP_PROJECT_ID**: Google Cloud Project ID
+4. **GCP_BUCKET_NAME**: Google Cloud Storage bucket name
+
+**How to add secrets:**
+1. Go to your GitHub repository → Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Add each secret with the exact name and value
+
+**Note**: The `GCP_CREDENTIALS_JSON` should contain the entire JSON content from your `credentials/gcp-credentials.json` file.
 
 ## 🚀 Production Deployment
 
