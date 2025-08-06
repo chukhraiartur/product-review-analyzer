@@ -119,6 +119,18 @@ def test_client(
         return_value=mock_vector_db_service,
     ), patch(
         "app.api.dependencies.get_db", return_value=test_db_session
+    ), patch(
+        "app.services.gcs_service.GCSService", return_value=mock_gcs_service
+    ), patch(
+        "app.services.llm.LLMService", return_value=mock_llm_service
+    ), patch(
+        "app.services.vector_db.VectorDBService", return_value=mock_vector_db_service
+    ), patch(
+        "google.auth.default", return_value=(Mock(), "test-project")
+    ), patch(
+        "google.cloud.storage.Client", return_value=Mock()
+    ), patch(
+        "sentence_transformers.SentenceTransformer", return_value=Mock()
     ):
         with TestClient(app) as client:
             yield client
