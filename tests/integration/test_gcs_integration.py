@@ -2,7 +2,7 @@
 
 import os
 import tempfile
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -139,11 +139,9 @@ class TestGCSIntegration:
     def test_image_download_integration(self, mock_get):
         """Test image download integration with requests."""
         # Mock successful response
-        mock_response = type(
-            "MockResponse",
-            (),
-            {"content": b"fake_image_data", "raise_for_status": lambda: None},
-        )()
+        mock_response = Mock()
+        mock_response.content = b"fake_image_data"
+        mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
         with patch("app.services.gcs_service.storage.Client"):
